@@ -1,0 +1,90 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2580
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+{\*\expandedcolortbl;;}
+\margl1440\margr1440\vieww11520\viewh8400\viewkind0
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf0 CREATE OR REPLACE DATABASE MANAGE_COMMON_DB;\
+\
+CREATE OR REPLACE SCHEMA EXT_STAGES;\
+// Create Stage. Ideally create Intgration Object\
+CREATE OR REPLACE STAGE MANAGE_COMMON_DB.EXT_STAGES.AWS_BUCKET_STAGE\
+    url='s3://bucketsnowflakes3';\
+// List Stage content\
+LIST @AWS_BUCKET_STAGE;\
+desc STAGE MANAGE_COMMON_DB.EXT_STAGES.AWS_BUCKET_STAGE;\
+\
+//Create Table\
+CREATE OR REPLACE TABLE SNOWFLAKE_LEARNING.PUBLIC.ORDERS (\
+    ORDER_ID VARCHAR(30),\
+    AMOUNT INT,\
+    PROFIT INT,\
+    QUANTITY INT,\
+    CATEGORY VARCHAR(30),\
+    SUBCATEGORY VARCHAR(30));\
+    \
+SELECT * FROM SNOWFLAKE_LEARNING.PUBLIC.ORDERS;\
+   \
+// Simple Load from S3\
+COPY INTO SNOWFLAKE_LEARNING.PUBLIC.ORDERS\
+    FROM @MANAGE_COMMON_DB.EXT_STAGES.AWS_BUCKET_STAGE\
+    file_format= (type = csv field_delimiter=',' skip_header=1)\
+    pattern='.*Order.*';\
+\
+// Select top 5 rows\
+select top 5 * from SNOWFLAKE_LEARNING.PUBLIC.ORDERS;\
+\
+// selectvely copy data instead\
+\
+CREATE OR REPLACE TABLE SNOWFLAKE_LEARNING.PUBLIC.ORDERS_SELECTIVE (\
+    ORDER_ID VARCHAR(30),\
+    AMOUNT INT,\
+    PROFIT INT,\
+    QUANTITY INT,\
+    CATEGORY VARCHAR(30),\
+    SUBCATEGORY VARCHAR(30),\
+    IS_PROFITABLE VARCHAR(1));\
+\
+\
+COPY INTO SNOWFLAKE_LEARNING.PUBLIC.ORDERS_SELECTIVE FROM (\
+            select s.$1,\
+                    s.$2,s.$3,s.$4,s.$5,s.$6,\
+                CASE WHEN CAST(s.$3 as int) < 0 THEN 'N' ELSE 'Y' END\
+    FROM @MANAGE_COMMON_DB.EXT_STAGES.AWS_BUCKET_STAGE s)\
+    file_format= (type = csv field_delimiter=',' skip_header=1)\
+    pattern='.*Order.*';\
+    \
+select top 10 * from SNOWFLAKE_LEARNING.PUBLIC.ORDERS_SELECTIVE;\
+\
+// Try UUID\
+\
+CREATE OR REPLACE TABLE SNOWFLAKE_LEARNING.PUBLIC.ORDERS_SELECTIVE (\
+    ORDER_KEY number autoincrement start 1 increment 1,\
+    ORDER_ID VARCHAR(30),\
+    AMOUNT INT,\
+    PROFIT INT,\
+    QUANTITY INT,\
+    CATEGORY VARCHAR(30),\
+    SUBCATEGORY VARCHAR(30),\
+    IS_PROFITABLE VARCHAR(1));\
+\
+\
+COPY INTO SNOWFLAKE_LEARNING.PUBLIC.ORDERS_SELECTIVE \
+(ORDER_ID, AMOUNT,PROFIT,QUANTITY,CATEGORY,SUBCATEGORY,IS_PROFITABLE) \
+FROM (\
+            select s.$1,\
+                    s.$2,s.$3,s.$4,s.$5,s.$6,\
+                CASE WHEN CAST(s.$3 as int) < 0 THEN 'N' ELSE 'Y' END\
+    FROM @MANAGE_COMMON_DB.EXT_STAGES.AWS_BUCKET_STAGE s)\
+    file_format= (type = csv field_delimiter=',' skip_header=1)\
+    pattern='.*Order.*';\
+    \
+// similar to Oracle SQL\
+select * from SNOWFLAKE_LEARNING.PUBLIC.ORDERS_SELECTIVE where order_id ='B-25601';\
+\
+select sum(amount), order_id from SNOWFLAKE_LEARNING.PUBLIC.ORDERS_SELECTIVE\
+where order_id ='B-25601'\
+group by order_id;\
+\
+}
