@@ -1,0 +1,14 @@
+SnowFlake - Best Practices
+
+Course:
+https://cglearning.udemy.com/course/snowflake-masterclass/learn/
+
+LOADING:
+
+1. Create a Schema to manage database options like stages, file format
+2. Use fully qualified names
+3. File format: Default is csv. Skip Header should be set to 1 if there is a header
+4. File format and stage have overlapping properties. Best Practice to use separate file format
+5. Size Limit on loading - loads the complete file even if exceeds limit. Will not load a subsequent file once limit is reached
+6. TRUNCATECOLUMNS - default is false. Making it true truncates to column data while inserting to the length of the column definition
+7. 

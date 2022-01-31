@@ -1,0 +1,75 @@
+ // Create new stage
+ CREATE OR REPLACE STAGE MANAGE_COMMON_DB.EXT_STAGES.AWS_STAGE_ERROR
+    url='s3://bucketsnowflakes4';
+ 
+ // List files in stage
+ LIST @MANAGE_COMMON_DB.EXT_STAGES.AWS_STAGE_ERROR;
+ 
+ 
+ // Create example table
+ CREATE OR REPLACE TABLE SNOWFLAKE_LEARNING.PUBLIC.ORDERS_ERROR (
+    ORDER_ID VARCHAR(30),
+    AMOUNT INT,
+    PROFIT INT,
+    QUANTITY INT,
+    CATEGORY VARCHAR(30),
+    SUBCATEGORY VARCHAR(30));
+ 
+ // Demonstrating error message
+ COPY INTO SNOWFLAKE_LEARNING.PUBLIC.ORDERS_ERROR
+    FROM @MANAGE_COMMON_DB.EXT_STAGES.AWS_STAGE_ERROR
+    file_format= (type = csv field_delimiter=',' skip_header=1)
+    files = ('OrderDetails_error.csv')
+    ON_ERROR = 'CONTINUE';
+    
+TRUNCATE TABLE SNOWFLAKE_LEARNING.PUBLIC.ORDERS_ERROR;
+
+// Error handling using the ON_ERROR option = ABORT_STATEMENT (default)
+COPY INTO SNOWFLAKE_LEARNING.PUBLIC.ORDERS_ERROR
+    FROM @MANAGE_COMMON_DB.EXT_STAGES.AWS_STAGE_ERROR
+    file_format= (type = csv field_delimiter=',' skip_header=1)
+    files = ('OrderDetails_error.csv','OrderDetails_error2.csv')
+    ON_ERROR = 'ABORT_STATEMENT';
+
+TRUNCATE TABLE SNOWFLAKE_LEARNING.PUBLIC.ORDERS_ERROR;
+
+// Error handling using the ON_ERROR option = SKIP_FILE
+COPY INTO SNOWFLAKE_LEARNING.PUBLIC.ORDERS_ERROR
+    FROM @MANAGE_COMMON_DB.EXT_STAGES.AWS_STAGE_ERROR
+    file_format= (type = csv field_delimiter=',' skip_header=1)
+    files = ('OrderDetails_error.csv','OrderDetails_error2.csv')
+    ON_ERROR = 'SKIP_FILE';
+TRUNCATE TABLE SNOWFLAKE_LEARNING.PUBLIC.ORDERS_ERROR;
+    
+ 
+TRUNCATE TABLE SNOWFLAKE_LEARNING.PUBLIC.ORDERS_ERROR;    
+
+// Error handling using the ON_ERROR option = SKIP_FILE_<number>
+COPY INTO SNOWFLAKE_LEARNING.PUBLIC.ORDERS_ERROR
+    FROM @MANAGE_COMMON_DB.EXT_STAGES.AWS_STAGE_ERROR
+    file_format= (type = csv field_delimiter=',' skip_header=1)
+    files = ('OrderDetails_error.csv','OrderDetails_error2.csv')
+    ON_ERROR = 'SKIP_FILE_2';    
+      
+  // Validating results and truncating table 
+SELECT * FROM SNOWFLAKE_LEARNING.PUBLIC.ORDERS_ERROR;
+SELECT COUNT(*) FROM SNOWFLAKE_LEARNING.PUBLIC.ORDERS_ERROR;
+
+// Error handling using the ON_ERROR option = SKIP_FILE_<number>
+COPY INTO SNOWFLAKE_LEARNING.PUBLIC.ORDERS_ERROR
+    FROM @MANAGE_COMMON_DB.EXT_STAGES.AWS_STAGE_ERROR
+    file_format= (type = csv field_delimiter=',' skip_header=1)
+    files = ('OrderDetails_error.csv','OrderDetails_error2.csv')
+    ON_ERROR = 'SKIP_FILE_0.5%'; 
+  
+//Add Size Limit on copy
+COPY INTO SNOWFLAKE_LEARNING.PUBLIC.ORDERS_ERROR
+    FROM @MANAGE_COMMON_DB.EXT_STAGES.AWS_STAGE_ERROR
+    file_format= (type = csv field_delimiter=',' skip_header=1)
+    files = ('OrderDetails_error.csv','OrderDetails_error2.csv')
+    ON_ERROR = SKIP_FILE_3 
+    SIZE_LIMIT = 30;
+
+
+
+
